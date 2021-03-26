@@ -1,0 +1,140 @@
+#!/bin/bash
+#do_run=1 # Execute(evaluate) the commands
+do_run=0 # Don't evaluate any commands
+do_sapcp_stuff=1
+do_perm_stuff=1
+do_cf_stuff=1
+force=$2
+if [ "$#" -eq 2 ]; then
+  if [ $force == "-f" ]; then
+    do_run=1
+    echo ""
+    echo "Forcing command execution"
+    echo ""
+  fi
+fi
+
+orgcnt=0
+START="$(date +%s)"
+
+while read orgspace
+do
+
+first=1
+IFS=':'     # colon (:) is set as delimiter
+read -ra ADDR <<< "$orgspace"   # str is read into an array as tokens separated by IFS
+for i in "${ADDR[@]}"; do   # access each element of array
+    #echo "$i"
+    #echo $first
+    if [ $first -eq 1 ]; then
+	    first=0
+	    org=$i
+    else
+	    first=1
+	    space=$i
+    fi
+done
+IFS=' '     # reset to default value after usage
+
+
+if [ $do_cf_stuff -eq 1 ]; then 
+
+cmd='cf target -o '$org' -s '$space
+echo $cmd
+if [ $do_run -eq 1 ]; then eval $cmd; fi
+
+echo Undeploying from $org $space
+
+cf undeploy acc -f --delete-services
+
+fi
+
+if [ $do_perm_stuff -eq 1 ]; then 
+
+hanacloudspaceguid="d096c374-91ef-4e57-aef6-8088384b9bc0"
+hanaclouddbinstguid="ffa845c4-c70e-4774-ba37-c0a6fdf16850"
+
+echo "Removing HANA Instance Sharing permissions"
+
+cmd='lastmappingid=$(curl https://hana-cockpit.cfapps.us21.hana.ondemand.com/hana-inventory/sap/hana/cloud/inventory/api/v1/spaces/'$hanacloudspaceguid'/hana/'$hanaclouddbinstguid'/mappings -x localhost:8080 --silent --location --insecure --request GET --header '"'"'Accept: application/json'"'"' | jq '"'"'.mappings[] | select(.organization_name == "'$org'") | .id'"'"' | tr -ds '"'"'"'"'"' '"'"''"'"')'
+echo $cmd
+if [ $do_run -eq 1 ]; then eval $cmd; fi
+
+cmd='lastorgid=$(curl https://hana-cockpit.cfapps.us21.hana.ondemand.com/hana-inventory/sap/hana/cloud/inventory/api/v1/spaces/'$hanacloudspaceguid'/hana/'$hanaclouddbinstguid'/mappings -x localhost:8080 --silent --location --insecure --request GET --header '"'"'Accept: application/json'"'"' | jq '"'"'.mappings[] | select(.organization_name == "'$org'") | .organization_guid'"'"' | tr -ds '"'"'"'"'"' '"'"''"'"')'
+echo $cmd
+if [ $do_run -eq 1 ]; then eval $cmd; fi
+
+cmd='lastspaceid=$(curl https://hana-cockpit.cfapps.us21.hana.ondemand.com/hana-inventory/sap/hana/cloud/inventory/api/v1/spaces/'$hanacloudspaceguid'/hana/'$hanaclouddbinstguid'/mappings -x localhost:8080 --silent --location --insecure --request GET --header '"'"'Accept: application/json'"'"' | jq '"'"'.mappings[] | select(.organization_name == "'$org'") | .space_guid'"'"' | tr -ds '"'"'"'"'"' '"'"''"'"')'
+echo $cmd
+if [ $do_run -eq 1 ]; then eval $cmd; fi
+
+#cmd='lastguid=$(curl $accountsurlcen/accounts/v1/subaccounts --silent --location --insecure --request POST --header '"'"'Content-Type: application/json'"'"' --header '"'"'Accept: application/json'"'"' --header '"'"'Authorization: Bearer '"'"'$bearercen --data-raw '"'"'{"betaEnabled": true, "customProperties": [ { "key": "creator", "value": "'$sapcpuser'" } ], "description": "Subaccount created via API", "displayName": "'$org'", "parentGUID": "'"'"'$globalacctguid'"'"'", "region": "us21", "subaccountAdmins": [ "andrew.lunde@sap.com" ], "subdomain": "viaapi'$orgcnt'", "usedForProductionSetting": "USED_FOR_PRODUCTION"}'"'"' | jq .guid | tr -ds '"'"'"'"'"' '"'"''"'"')'
+cmd='delmappingresult=$(curl https://hana-cockpit.cfapps.us21.hana.ondemand.com/hana-inventory/sap/hana/cloud/inventory/api/v1/organizations/'$lastorgid'/spaces/'$lastspaceid'/hana/'$hanaclouddbinstguid'/mappings/'$hanacloudspaceguid' -x localhost:8080 --silent --location --insecure --request DELETE --header '"'"'Content-Type: application/json'"'"')'
+echo $cmd
+if [ $do_run -eq 1 ]; then eval $cmd; fi
+
+fi
+
+if [ $do_sapcp_stuff -eq 1 ]; then 
+
+echo "Getting SubAccount : $org "
+#              sapcp --format json list accounts/subaccount --global-account partner-eng | jq '.value[] | select(.displayName == "PEAHCM") | .subdomain' | tr -ds '"' ''
+lastsubguid=$(sapcp --format json list accounts/subaccount --global-account partner-eng | jq '.value[] | select(.displayName == "'$org'") | .guid' | tr -ds '"' '')
+
+# De-entitle
+sapcp --format json assign accounts/entitlement --global-account partner-eng --to-subaccount $lastsubguid --for-service hana --plan schema
+
+sapcp --format json assign accounts/entitlement --global-account partner-eng --to-subaccount $lastsubguid --for-service APPLICATION_RUNTIME --plan MEMORY --amount 0
+
+# Disable CloudFoundry
+
+cmd='lastenvguid=$(sapcp --format json list accounts/environment-instance --subaccount '$lastsubguid' | jq '"'"'.environmentInstances[] | select(.environmentType == "cloudfoundry") | .id'"'"' | tr -ds '"'"'"'"'"' '"'"''"'"')'
+echo $cmd
+if [ $do_run -eq 1 ]; then eval $cmd; fi
+echo ""
+
+cmd='status=$(sapcp --format json delete accounts/environment-instance '$lastenvguid' --subaccount '$lastsubguid' --confirm | jq '"'"'.status'"'"' | tr -ds '"'"'"'"'"' '"'"''"'"')'
+echo $cmd
+if [ $do_run -eq 1 ]; then eval $cmd; fi
+echo ""
+
+if [ $do_run -eq 1 ]; then 
+  status=INIT
+  while [ $status != "Processed" ] && [ $lastenvguid != "null" ]; do
+    echo "Status is "$status
+    sleep 2
+    status=$(sapcp --format json  get accounts/environment-instance $lastenvguid --subaccount $lastsubguid | jq .status | tr -ds '"' '')
+  done
+fi
+
+
+
+echo "Deleting SubAccount : $org "
+
+#lastsubguid=$(sapcp --format json list accounts/subaccount --global-account partner-eng | jq '.value[] | select(.displayName == "PEAHCM") | .guid' | tr -ds '"' ''
+
+cmd='delsubguid=$(sapcp --format json delete accounts/subaccount '$lastsubguid' --global-account partner-eng --confirm | jq .guid | tr -ds '"'"'"'"'"' '"'"''"'"')'
+echo $cmd
+if [ $do_run -eq 1 ]; then eval $cmd; fi
+echo ""
+
+echo "Deleting Subaccount = "$delsubguid
+
+if [ $do_run -eq 1 ]; then 
+  state=INIT
+  while [ $state != "null" ] && [ $delsubguid != "null" ]; do
+    echo "State is "$state
+    sleep 2
+    state=$(sapcp --format json get accounts/subaccount $lastsubguid | jq .state | tr -ds '"' '')
+  done
+fi
+
+fi
+
+((orgcnt++))
+
+done < $1
+
+DURATION=$[ $(date +%s) - ${START} ]
+
+echo $orgcnt orgs processed in ${DURATION} seconds = $(( ${DURATION} / $orgcnt )) secs/org

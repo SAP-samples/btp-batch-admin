@@ -1,0 +1,137 @@
+## Generated mta.yaml based on yo sap-partner-eng version 0.3.11
+## appName = bat
+## language=nodejs; multiTenant=false
+## approuter=bat-app
+_schema-version: '3.1'
+ID: bat
+version: 0.0.1
+description: Simple CloudFoundry Multi-Target-Application with BASH based batch files for creating/deleting/deploying via the sapcp command.
+parameters:
+   enable-parallel-deployments: true
+  
+  
+build-parameters:
+  before-all:
+   - builder: custom
+     commands:
+      - npm install
+      - npx -p @sap/cds-dk cds build
+
+modules:
+
+### New Modules Here ###
+
+ - name: bat-pyt-sch
+   type: python
+   path: pyt-sch
+   parameters:
+      memory: 256M
+      disk-quota: 512M
+   provides:
+    - name: bat_pyt_sch_api
+      properties:
+         url: ${default-url}
+   requires:
+    - name: bat-sch
+    - name: bat-uaa
+
+
+# cf push bat-app -p app -n bat-app -d cfapps.us21.hana.ondemand.com -k 256M -m 256M
+ - name: bat-app
+   type: html5
+   path: app
+   build-parameters:
+      # Don't package the dependencies if you're running into EINTEGRITY issues
+      ignore: ["default-env.json","package-lock.json", "node_modules/"]
+      # Suppress the calling of npm install by listing no commands
+      builder: custom
+      commands: []
+   parameters:
+      #host: ${org}-${space}-bat-app
+      #domain: cfapps.us21.hana.ondemand.com
+      #routes:
+      #  - route: bat-app-${space}-${app-name}.${default-domain}
+      disk-quota: 256M
+      memory: 256M
+   provides:
+    - name: Router_api
+      properties:
+         url: ${default-url}
+         application: ${app-name}
+# CDS-MTX
+   requires:
+   # cf bind-service bat-app BAT_UAA
+    - name: bat-uaa
+   ### New Destinations Here ###
+    - name: bat_pyt_sch_api
+      group: destinations
+      properties:
+         name: bat_pyt_sch_be
+         url: ~{url}
+         forwardAuthToken: true
+
+resources:
+
+# cf create-service xsuaa application BAT_UAA -c ./cds-security.json
+ - name: bat-uaa
+   type: org.cloudfoundry.managed-service
+   requires:
+    - name: Router_api
+   properties:
+      XSAPPNAME: ${xsuaa-app}
+   parameters:
+      # Re-run the following command after changing any @(requires: []) definitions in srv/*.cds
+      # Run this from the root of the project and uncomment the path:
+      # cds compile srv/ --to xsuaa,json > cds-security.json
+      #path: ./cds-security.json
+      # The combination of path: and config.scopes: Doesn't seem work.  Use one or the other.
+      # cds compile srv/ --to xsuaa,yaml and make sure the config: below matches
+      #path: ./cds-security.json
+      #path: ./xs-security.json
+      service: xsuaa
+      service-plan: application
+      service-name: BAT_UAA
+      xsuaa-app: ${space}-~{Router_api/application}
+      # Define within config what used to be in the xs-security.json file.  path: now pulls in cds scopes/role templates
+      # Convert with https://www.json2yaml.com/
+      # https://github.wdf.sap.corp/pages/cap/guides/authorization#role-assignments-with-xsuaa
+      config:
+         xsappname: ${xsuaa-app}
+         ### tenant-mode
+         tenant-mode: dedicated
+         description: Security profile of the bat application
+         scopes:
+          - name: "$XSAPPNAME.Callback"
+            description: With this scope set, the callbacks for tenant onboarding, offboarding and getDependencies can be called.
+            grant-as-authority-to-apps: 
+             - "$XSAPPNAME(application,sap-provisioning,tenant-onboarding)"
+          - name: "$XSAPPNAME.Administrator"
+            description: Administrate the application
+          - name: "$XSAPPNAME.User"
+            description: Use the application
+         role-templates:
+          - name: Administrator
+            description: Administrator
+            scope-references:
+             - "$XSAPPNAME.Administrator"
+          - name: User
+            description: User
+            scope-references:
+             - "$XSAPPNAME.User"
+         oauth2-configuration:
+            redirect-uris: 
+             - "http*://*.cfapps.us21.hana.ondemand.com/**"
+
+### New Resources Here ###
+
+ - name: bat-sch
+   type: com.sap.xs.hana-schema
+   parameters:
+      service-name: BAT_SCH
+      config:
+         database_id: ffa845c4-c70e-4774-ba37-c0a6fdf16850
+      #service-name: BAT_SCHB
+      #config:
+      #   database_id: ffa845c4-c70e-4774-ba37-c0a6fdf16850
+      #   schema: USR_BMQATEYENQ0II385ZU89URUWP
+

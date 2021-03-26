@@ -1,0 +1,152 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta http-equiv='Content-Type' content='text/html;charset=UTF-8' />
+<title>cloud-management-batch</title>
+
+<style>
+    #mainBody {
+        font-family: Tahoma, Geneva, sans-serif;
+    }
+    .request_labels {
+        display: none;
+    }
+    #request_content {
+        display: none;
+    }
+    .response_labels {
+        display: none;
+    }
+    #response_content {
+        display: none;
+    }
+</style>
+
+<!-- Page Load Script -->
+<script>
+
+    (function () {
+        var onWindowLoad = function () {
+            
+            var loadScript = function (src, callback) {
+            
+                var element = document.createElement("script");
+                    element.src = src;
+                    element.async = true;
+                    document.body.appendChild(element);
+                    
+                    if (callback) {
+                    
+                        element.onreadystatechange = function () {
+                            if (this.readyState === "loaded" || this.readyState === "complete") { 
+                                callback();
+                            }
+                        };
+                        element.onload = callback;
+                    }
+            },
+            
+            loadArticleScript = function () {
+                preparePageElements();
+            };
+            loadScript("https://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.js", loadArticleScript);
+        };
+    
+        if (window.addEventListener) {
+            window.addEventListener("load", onWindowLoad, false);
+        } else if (window.attachEvent) {
+            window.attachEvent("onload", onWindowLoad);
+        } else {
+            window.onload = onWindowLoad;
+        }
+    }());	
+
+</script>
+
+<script>
+
+function randomIntFromInterval(min,max)
+{
+    return Math.floor(Math.random()*(max-min+1)+min);
+}
+
+// Globals
+var request_output = "";
+var xhr = new XMLHttpRequest();
+
+var local_route = "python";
+
+xhr.open('POST', 'python/post');
+request_output += "POST to python/post \n";
+xhr.setRequestHeader('Content-Type', 'application/json');
+request_output += "Request Header: Content-Type = application/json \n";
+xhr.setRequestHeader('Accept', 'application/json');
+request_output += "Request Header: Accept = application/json \n";
+
+request_output += "\n";
+request_output += "Request Body: \n";
+
+function dumpResponseHeaders(xhr_obj) {
+    var hdr_out = "";
+    hdr_out += "Response Headers\n";
+    hdr_out += "\n";
+    var headers = xhr_obj.getAllResponseHeaders();
+    return (hdr_out + headers + "\n");
+}
+
+xhr.onload = function() {
+    if (xhr.status === 201) {
+        document.getElementById("response_content").innerHTML = "<pre>\n" + dumpResponseHeaders(xhr) + "Response Body: \n" + JSON.stringify(JSON.parse(xhr.responseText), null, 2) + "</pre>\n";
+    }
+    else {
+        alert("Yipe!  Got status " + xhr.status + " : " + xhr.statusText + " ::\n " + JSON.parse(xhr.responseText).error.message.value + " \n:: expected 201.");
+    }
+};
+
+var request_obj = 
+{
+   "numberTarget": 0,
+   "numberData": "0,0,255,0"
+};
+
+function preparePageElements()
+{
+	var requestDiv = document.getElementById('request_content');
+	requestDiv.style.display = 'block';	
+        
+}
+</script>    
+
+</head>
+<body id="mainBody">
+<strong>cloud-management-batch</strong><br />
+<br />
+<img src="favicon.ico" /><br />
+
+<p class="request_labels">===Begin Request===</p>
+<div id="request_content">
+No request sent yet.    
+</div>
+<p class="request_labels">===End Request===</p>
+
+<p class="response_labels">===Begin Response===</p>
+<div id="response_content">
+No results returned yet.    
+</div>
+<p class="response_labels">===End Response===</p>
+
+<script>
+    // Display the request
+//    document.getElementById("request_content").innerHTML = "<pre>\n" + request_output + "\n" + JSON.stringify(request_obj, null, 2) + "</pre>\n";
+    
+    // Send the Ajax Request.
+    //xhr.send(JSON.stringify(request_obj));
+</script>
+    
+
+  <a href="/python/">/python/</a> link handled by bat-pyt-sch<br />
+
+</body>
+</html>
+

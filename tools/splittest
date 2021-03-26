@@ -1,0 +1,23 @@
+#!/bin/bash
+ 
+str="PEAHCM_SaaS_Clients_-_Subscription_SaaSBostonScientificPRDACTfC:dev"
+ 
+first=1
+IFS=':'     # colon (:) is set as delimiter
+read -ra ADDR <<< "$str"   # str is read into an array as tokens separated by IFS
+for i in "${ADDR[@]}"; do   # access each element of array
+    #echo "$i"
+    #echo $first
+    if [ $first -eq 1 ]; then
+	    first=0
+	    org=$i
+    else
+	    first=1
+	    space=$i
+    fi
+done
+IFS=' '     # reset to default value after usage
+
+echo "org="$org
+echo "space="$space
+
