@@ -1,6 +1,6 @@
 [![REUSE status](https://api.reuse.software/badge/github.com/SAP-samples/cloud-management-batch)](https://api.reuse.software/info/github.com/SAP-samples/cloud-management-batch)
 
-# cloud-management-batch
+# Cloud Managment Batch
 Simple CloudFoundry Multi-Target-Application with BASH based batch files for creating/deleting/deploying via the sapcp command.
 
 ## Description
