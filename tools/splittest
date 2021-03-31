@@ -1,6 +1,6 @@
 #!/bin/bash
  
-str="PEAHCM_SaaS_Clients_-_Subscription_SaaSBostonScientificPRDACTfC:dev"
+str="PEAHCM_BLAH:dev"
  
 first=1
 IFS=':'     # colon (:) is set as delimiter

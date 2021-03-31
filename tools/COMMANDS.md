@@ -5,8 +5,8 @@ cf login -u andrew.lunde@sap.com
 
 export globalacctguid=71f51ce6-c6b5-4583-a6ac-49e392506619
 
-export sapcpuser=primaryuser03@gmail.com
-export sapcppass=PrimaryUs3r03
+export btpuser=primaryuser03@gmail.com
+export btppass=PrimaryUs3r03
 
 
 cf create-service cis central ACC_CIS_CEN
@@ -18,7 +18,7 @@ clientidcen=$(cf service-key ACC_CIS_CEN ACC_CIS_CEN_Key | tail -n +3 | jq .uaa.
 clientsecretcen=$(cf service-key ACC_CIS_CEN ACC_CIS_CEN_Key | tail -n +3 | jq .uaa.clientsecret | tr -ds '"' '')
 accountsurlcen=$(cf service-key ACC_CIS_CEN ACC_CIS_CEN_Key | tail -n +3 | jq .endpoints.accounts_service_url | tr -ds '"' '')
 provisioningurlcen=$(cf service-key ACC_CIS_CEN ACC_CIS_CEN_Key | tail -n +3 | jq .endpoints.provisioning_service_url | tr -ds '"' '')
-bearercen=$(curl -u $clientidcen:$clientsecretcen $authurlcen/oauth/token --silent --location --insecure --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'username='$sapcpuser --data-urlencode 'password='$sapcppass | jq .access_token | tr -ds '"' '')
+bearercen=$(curl -u $clientidcen:$clientsecretcen $authurlcen/oauth/token --silent --location --insecure --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'username='$btpuser --data-urlencode 'password='$btppass | jq .access_token | tr -ds '"' '')
 
 cf create-service cis local ACC_CIS_LOC
 cf create-service-key ACC_CIS_LOC ACC_CIS_LOC_Key
@@ -29,7 +29,7 @@ clientidloc=$(cf service-key ACC_CIS_LOC ACC_CIS_LOC_Key | tail -n +3 | jq .uaa.
 clientsecretloc=$(cf service-key ACC_CIS_LOC ACC_CIS_LOC_Key | tail -n +3 | jq .uaa.clientsecret | tr -ds '"' '')
 accountsurlloc=$(cf service-key ACC_CIS_LOC ACC_CIS_LOC_Key | tail -n +3 | jq .endpoints.accounts_service_url | tr -ds '"' '')
 provisioningurlloc=$(cf service-key ACC_CIS_LOC ACC_CIS_LOC_Key | tail -n +3 | jq .endpoints.provisioning_service_url | tr -ds '"' '')
-bearerloc=$(curl -u $clientidloc:$clientsecretloc $authurlloc/oauth/token --silent --location --insecure --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'username='$sapcpuser --data-urlencode 'password='$sapcppass | jq .access_token | tr -ds '"' '')
+bearerloc=$(curl -u $clientidloc:$clientsecretloc $authurlloc/oauth/token --silent --location --insecure --header 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'grant_type=password' --data-urlencode 'username='$btpuser --data-urlencode 'password='$btppass | jq .access_token | tr -ds '"' '')
 
 curl $accountsurlcen/accounts/v1/subaccounts --silent --location --insecure --header 'Content-Type: application/json' --header 'Authorization: Bearer '$bearercen | jq .
 
@@ -45,14 +45,14 @@ Actions for accounts/subaccount
   subscribe             Subscribe to an application from a subaccount
   unsubscribe           Unsubscribe an application from a subaccount
 
-sapcp --format json create accounts/subaccount 
-sapcp --format json  get accounts/subaccount 05623911-8ee9-43f5-8cda-b74c46e4175e
-sapcp --format json create accounts/subaccount --global-account SUBDOMAIN --display-name PEAHCM --region REGION [--subdomain SUBDOMAIN] [--used-for-production VALUE] [--description DESCRIPTION] [--directory ID] [--beta-enabled] --subaccount-admins JSON [--custom-properties JSON]
+btp --format json create accounts/subaccount 
+btp --format json  get accounts/subaccount 05623911-8ee9-43f5-8cda-b74c46e4175e
+btp --format json create accounts/subaccount --global-account SUBDOMAIN --display-name PEAHCM --region REGION [--subdomain SUBDOMAIN] [--used-for-production VALUE] [--description DESCRIPTION] [--directory ID] [--beta-enabled] --subaccount-admins JSON [--custom-properties JSON]
 
-lastguid=$(sapcp --format json create accounts/subaccount --global-account partner-eng --display-name PEAHCM --region us21 --subdomain partner-other --used-for-production NOT_USED_FOR_PRODUCTION --description "Azure subaccount" --beta-enabled | jq .guid | tr -ds '"' '')
-sapcp --format json  get accounts/subaccount $lastguid | jq .state
-sapcp --format json  delete accounts/subaccount 91a08337-7823-4645-9297-d9c0b5539d99 --confirm
-sapcp --format json  get accounts/subaccount $lastguid | jq .state
+lastguid=$(btp --format json create accounts/subaccount --global-account partner-eng --display-name PEAHCM --region us21 --subdomain partner-other --used-for-production NOT_USED_FOR_PRODUCTION --description "Azure subaccount" --beta-enabled | jq .guid | tr -ds '"' '')
+btp --format json  get accounts/subaccount $lastguid | jq .state
+btp --format json  delete accounts/subaccount 91a08337-7823-4645-9297-d9c0b5539d99 --confirm
+btp --format json  get accounts/subaccount $lastguid | jq .state
 
 curl $accountsurlcen/accounts/v1/subaccounts/$lastguid --silent --location --insecure --header 'Content-Type: application/json' --header 'Authorization: Bearer '$bearercen | jq .state | tr -ds '"' ''
 
@@ -115,9 +115,9 @@ Response
 
 curl $provisioningurlloc/provisioning/v1/environments/EF2ED852-5471-4D37-BDEB-0C085DB8FD40 --silent --location --insecure --request DELETE --header 'Content-Type: application/json' --header 'Authorization: Bearer '$bearerloc | jq .
 
-#sapcp login --url https://cpcli.cf.eu10.hana.ondemand.com --subdomain partner-eng --user andrew.lunde@sap.com
-#sapcp login --url https://cpcli.cf.eu10.hana.ondemand.com --subdomain partner-eng --user primaryuser03@gmail.com
-#sapcp list accounts/subaccount
+#btp login --url https://cpcli.cf.eu10.hana.ondemand.com --subdomain partner-eng --user andrew.lunde@sap.com
+#btp login --url https://cpcli.cf.eu10.hana.ondemand.com --subdomain partner-eng --user primaryuser03@gmail.com
+#btp list accounts/subaccount
 
 Actions for accounts/environment-instance
   list                  Get all environment instances of a subaccount
@@ -126,22 +126,22 @@ Actions for accounts/environment-instance
   update                Update an environment instance of a subaccount
   delete                Delete an environment instance of a subaccount
 
-#sapcp --format json list accounts/subaccount | jq '.value[] | select(.displayName == "subA")' 
-#sapcp --format json list accounts/subaccount | jq '.value[] | select(.displayName == "subA") | .guid' | tr -ds '"' ''
+#btp --format json list accounts/subaccount | jq '.value[] | select(.displayName == "subA")' 
+#btp --format json list accounts/subaccount | jq '.value[] | select(.displayName == "subA") | .guid' | tr -ds '"' ''
 
 
 # Only works when logged in as andrew.lunde
-# sapcp --format json create accounts/environment-instance --subaccount 05623911-8ee9-43f5-8cda-b74c46e4175e --parameters '{"instance_name":"blah-test","users":[{"email":"andrew.lunde@sap.com"}]}' --display-name blah-test --environment cloudfoundry --landscape cf-us21 --service cloudfoundry --plan standard | jq .id
+# btp --format json create accounts/environment-instance --subaccount 05623911-8ee9-43f5-8cda-b74c46e4175e --parameters '{"instance_name":"blah-test","users":[{"email":"andrew.lunde@sap.com"}]}' --display-name blah-test --environment cloudfoundry --landscape cf-us21 --service cloudfoundry --plan standard | jq .id
 
-sapcp --format json get accounts/environment-instance C03726E6-EC30-4585-B7A3-992F8E40C0F7 --subaccount 05623911-8ee9-43f5-8cda-b74c46e4175e | jq .status | tr -ds '"' ''
+btp --format json get accounts/environment-instance C03726E6-EC30-4585-B7A3-992F8E40C0F7 --subaccount 05623911-8ee9-43f5-8cda-b74c46e4175e | jq .status | tr -ds '"' ''
 
-sapcp --format json delete accounts/environment-instance C03726E6-EC30-4585-B7A3-992F8E40C0F7 --subaccount 05623911-8ee9-43f5-8cda-b74c46e4175e --confirm
+btp --format json delete accounts/environment-instance C03726E6-EC30-4585-B7A3-992F8E40C0F7 --subaccount 05623911-8ee9-43f5-8cda-b74c46e4175e --confirm
 
-Usage: sapcp [OPTIONS] assign accounts/entitlement --global-account SUBDOMAIN [--to-subaccount ID] [--to-directory ID] --for-service NAME --plan NAME [--enable] [--amount NUMBER] [--auto-distribute-amount NUMBER] [--auto-assign] [--distribute]
+Usage: btp [OPTIONS] assign accounts/entitlement --global-account SUBDOMAIN [--to-subaccount ID] [--to-directory ID] --for-service NAME --plan NAME [--enable] [--amount NUMBER] [--auto-distribute-amount NUMBER] [--auto-assign] [--distribute]
 
-sapcp --format json assign accounts/entitlement --global-account partner-eng --to-subaccount 05623911-8ee9-43f5-8cda-b74c46e4175e --for-service hana --plan schema --enable
+btp --format json assign accounts/entitlement --global-account partner-eng --to-subaccount 05623911-8ee9-43f5-8cda-b74c46e4175e --for-service hana --plan schema --enable
 
-sapcp --format json assign accounts/entitlement --global-account partner-eng --to-subaccount 05623911-8ee9-43f5-8cda-b74c46e4175e --for-service APPLICATION_RUNTIME --plan MEMORY --amount 1
+btp --format json assign accounts/entitlement --global-account partner-eng --to-subaccount 05623911-8ee9-43f5-8cda-b74c46e4175e --for-service APPLICATION_RUNTIME --plan MEMORY --amount 1
 
 
 cf update-service pehcaza -c '{"operation":"adddatabasemapping", "orgid":"5799de10-e447-4b78-9b90-52dbc109fa05", "spaceid":"d096c374-91ef-4e57-aef6-8088384b9bc0"}'
@@ -156,6 +156,6 @@ space_guid: "e58f90ef-d555-411b-a0a8-0462569dbe9e"
 curl https://hana-cockpit.cfapps.us21.hana.ondemand.com/hana-inventory/sap/hana/cloud/inventory/api/v1/96c374-91ef-4e57-aef6-8088384b9bc0/hana/ffa845c4-c70e-4774-ba37-c0a6fdf16850/mappings -x localhost:8080 --silent --location --insecure --request PUT --header 'Content-Type: application/json' --header 'x-csrf-token: ea01bc77a75398e0-gYuqGTEKQcOnLB-dc0rbZuDdBX8' --data-raw '{"database_id": "ffa845c4-c70e-4774-ba37-c0a6fdf16850", "organization_guid": "79ab0a7d-24ca-4f8b-a8f7-79d4a438f5e8", "space_guid": "ff8945f3-a403-408d-87a1-fa8f4137223c"}'
 
 source orgs_create orgs1.txt -f
-source orgs_sapcp_create orgs1.txt -f
+source orgs_btp_create orgs1.txt -f
 source orgs_create orgs2.txt -f
 ```
