@@ -29,3 +29,4 @@ mta_archives/
 .vscode
 .idea
 tools/__pycache__/
+mitmproxy/__pycache__/

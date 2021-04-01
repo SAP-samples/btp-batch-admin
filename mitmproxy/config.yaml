@@ -114,7 +114,8 @@ http2_priority: false
 ignore_hosts: []
 
 # Intercept filter expression. Type optional str.
-intercept:
+intercept: 
+#intercept: hana-cockpit\.cfapps\.us21\.hana\.ondemand\.com
 
 # Intercept toggle Type bool.
 intercept_active: false
@@ -306,7 +307,8 @@ upstream_bind_address: ''
 upstream_cert: true
 
 # Limit the view to matching flows. Type optional str.
-#view_filter: hana-cockpit\.cfapps\.us21\.hana\.ondemand\.com
+#view_filter: 
+view_filter: hana-cockpit\.cfapps\.us21\.hana\.ondemand\.com
 
 # Flow sort order. Valid values are 'time', 'method', 'url', 'size'.
 view_order: time

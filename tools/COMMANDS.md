@@ -1,5 +1,10 @@
 ```
-export=https_proxy=localhost:8080
+export https_proxy=localhost:8080
+
+export HTTPS_PROXY=127.0.0.1:8080
+export https_proxy=127.0.0.1:8080
+export no_proxy=
+
 
 cf login -u andrew.lunde@sap.com
 

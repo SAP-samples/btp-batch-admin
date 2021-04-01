@@ -18,7 +18,7 @@ hanacloudspace="prod"
 hanacloudspaceguid="d096c374-91ef-4e57-aef6-8088384b9bc0"
 hanaclouddbinstguid="ffa845c4-c70e-4774-ba37-c0a6fdf16850"
 cloudfoundryuser="andrew.lunde@sap.com"
-relativepathtomtar="../mta_archives/acc.mtar"
+relativepathtomtar="../mta_archives/bat.mtar"
 
 if [ "$#" -eq 2 ]; then
   if [ $force == "-f" ]; then
@@ -79,9 +79,10 @@ fi
 
 #https://accounts-service.cfapps.eu10.hana.ondemand.com/api#/
 # btp create accounts/environment-instance --subaccount c96d49c7-bdbf-436c-a35a-322b90ba2793 --parameters '{"instance_name":"ypartner-sub1","users":[{"email":"'$cloudfoundryuser'"}]}' --display-name ypartner-sub1 --environment cloudfoundry --landscape cf-us21 --service cloudfoundry --plan standard
+# cmd='lastguid=$(curl $accountsurlcen/accounts/v1/subaccounts --silent --location --insecure --request POST --header '"'"'Content-Type: application/json'"'"' --header '"'"'Accept: application/json'"'"' --header '"'"'Authorization: Bearer '"'"'$bearercen --data-raw '"'"'{"betaEnabled": true, "customProperties": [ { "key": "creator", "value": "'$sapcpuser'" } ], "description": "Subaccount created via API", "displayName": "'$org'", "parentGUID": "'"'"'$globalacctguid'"'"'", "region": "us21", "subaccountAdmins": [ "andrew.lunde@sap.com" ], "subdomain": "viaapi'$orgcnt'", "usedForProductionSetting": "USED_FOR_PRODUCTION"}'"'"' | jq .guid | tr -ds '"'"'"'"'"' '"'"''"'"')'
+
 echo ""
 echo "Enabling CF in : $org "
-#cmd='lastguid=$(curl $accountsurlcen/accounts/v1/subaccounts --silent --location --insecure --request POST --header '"'"'Content-Type: application/json'"'"' --header '"'"'Accept: application/json'"'"' --header '"'"'Authorization: Bearer '"'"'$bearercen --data-raw '"'"'{"betaEnabled": true, "customProperties": [ { "key": "creator", "value": "'$sapcpuser'" } ], "description": "Subaccount created via API", "displayName": "'$org'", "parentGUID": "'"'"'$globalacctguid'"'"'", "region": "us21", "subaccountAdmins": [ "andrew.lunde@sap.com" ], "subdomain": "viaapi'$orgcnt'", "usedForProductionSetting": "USED_FOR_PRODUCTION"}'"'"' | jq .guid | tr -ds '"'"'"'"'"' '"'"''"'"')'
 
 cmd='lastenvguid=$(btp --format json create accounts/environment-instance --subaccount '$lastsubguid' --parameters '"'"'{"instance_name":"'$org'","users":[{"email":"'$cloudfoundryuser'"}]}'"'"' --display-name '$org' --environment cloudfoundry --landscape cf-us21 --service cloudfoundry --plan standard | jq .id | tr -ds '"'"'"'"'"' '"'"''"'"')'
 if [ $do_echo -eq 1 ]; then echo $cmd; fi
@@ -148,6 +149,8 @@ cmd='cf target -o '$hanacloudorg' -s '$hanacloudspace
 if [ $do_echo -eq 1 ]; then echo $cmd; fi
 if [ $do_run -eq 1 ]; then eval $cmd; sleep 1; fi
 
+fi
+
 # Now go permit HANA in this space.
 # This is not WORKING emulate UI instead
 #cmd='cf update-service pehcaza -c '"'"'{"operation":"adddatabasemapping", "orgid":"'$lastorgguid'", "spaceid":"'$lastspaceguid'"}'"'"''
@@ -156,8 +159,6 @@ if [ $do_run -eq 1 ]; then eval $cmd; sleep 1; fi
 
 #echo "Giving the update a couple secs."
 #sleep 2
-
-fi
 
 if [ $do_perm_stuff -eq 1 ]; then 
 echo ""

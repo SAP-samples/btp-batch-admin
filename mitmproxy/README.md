@@ -1,3 +1,4 @@
+# Run mitmproxy using local configuration and xs-csrf-token script
 ```
-mitmproxy --set confdir=/home/user
+mitmproxy --set confdir=./mitmproxy -s ./mitmproxy/x-csrf-token.py
 ```
